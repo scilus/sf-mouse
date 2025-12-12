@@ -68,6 +68,10 @@ workflow {
     if ( params.use_fodf_for_tracking && ! params.run_tracking ) {
         error "The parameter use_fodf_for_tracking cannot be enabled if run_tracking is disabled."
     }
+    
+    if ( params.use_fodf_for_tracking && ! params.run_fodf) {
+        error "The parameter use_fodf_for_tracking cannot be enabled if run_fodf is disabled."
+    }
 
     ch_dwi_bvalbvec = data.dwi
         .multiMap { meta, dwi, bval, bvec ->
