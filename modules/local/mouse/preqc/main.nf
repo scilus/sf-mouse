@@ -5,7 +5,7 @@ process PRE_QC {
     container "scilus/scilus:2.2.0"
 
     input:
-    tuple val(meta), path(dwi), path(bval), path(bvec)
+    tuple val(meta), path(dwi), path(bval), path(bvec), path(ref_rgb)
 
     output:
     tuple val(meta), path("*__stride_dwi.nii.gz")                                       , emit: dwi
@@ -115,11 +115,11 @@ process PRE_QC {
             ${prefix}__sag_slice_\${mid_slice_sagittal}.png \
             ${prefix}_rgb_\${p}_mqc.png
 
-        convert -annotate +20+230 "RGB \${p}" -fill white -pointsize 30 ${prefix}_rgb_\${p}_mqc.png ${prefix}_rgb_\${p}_mqc.png
+        convert -annotate +20+40 "RGB \${p}" -fill white -pointsize 30 -undercolor black ${prefix}_rgb_\${p}_mqc.png ${prefix}_rgb_\${p}_mqc.png
 
         rm -rf *_slice_*png
     done
-    convert -append ${prefix}_rgb_pre_mqc.png ${prefix}_rgb_post_mqc.png ${prefix}__rgb_mqc.png
+    convert -append ${prefix}_rgb_pre_mqc.png ${prefix}_rgb_post_mqc.png $ref_rgb ${prefix}__rgb_mqc.png
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

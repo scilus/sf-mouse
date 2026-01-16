@@ -23,6 +23,11 @@ custom_data:
     description: |
       RGB map from RAW data versus RGB map after gradient correction. Corpus callosum should be in red.
       ### **Using the option use_preqc is highly experimental. Please be careful.**
+      <div style="background-color: #ffcccc; color: red; padding: 10px; border: 2px solid red;">
+        Be careful: If the colours match the reference image, it is important to ALSO look at the
+        eigenvectors of the tensors from the DTI model located in the folder (<code>dwi/sub-01_model-tensor_param-v1_dwimap.nii.gz</code>) 
+        to ensure that the orientation is correct (see <a href="https://scilus.github.io/nf-mouse/guides/faq/" target="_blank">FAQ</a>).
+      </div>
     plot_type: "image"
 
   pre_qc_sampling_mqc:
