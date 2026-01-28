@@ -197,7 +197,7 @@ workflow {
         ch_multiqc_files = ch_multiqc_files.mix(TRACKING_LOCALTRACKING.out.mqc)
     }
 
-    MOUSE_EXTRACTMASKS(MOUSE_REGISTRATION.out.ANO_LR)
+    MOUSE_EXTRACTMASKS(MOUSE_REGISTRATION.out.ANO)
 
     ch_metrics = RECONST_DTIMETRICS.out.md
                     .join(RECONST_DTIMETRICS.out.fa)
