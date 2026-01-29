@@ -49,10 +49,12 @@ workflow get_data {
         mask_channel = Channel.fromPath("$input/**/*mask.nii.gz")
                         .map { mask_file -> def sid = mask_file.parent.name
                         [[id: sid], mask_file] }
+        template_channel = Channel.fromPath("$projectDir/assets/reference_rgb_mqc.png")
 
     emit:
         dwi   = dwi_channel
         mask  = mask_channel
+        template_rgb = template_channel
 }
 
 workflow {
@@ -77,9 +79,10 @@ workflow {
             bval:   [meta, bval]
             bvec:   [meta, bvec]
         }
+    ch_ref_rgb = data.template_rgb
 
     if ( params.run_preqc ) {
-        PRE_QC(ch_dwi_bvalbvec.dwi.join(ch_dwi_bvalbvec.bvs_files))
+        PRE_QC(ch_dwi_bvalbvec.dwi.join(ch_dwi_bvalbvec.bvs_files).combine(ch_ref_rgb))
         ch_multiqc_files = ch_multiqc_files.mix(PRE_QC.out.rgb_mqc)
         ch_multiqc_files = ch_multiqc_files.mix(PRE_QC.out.sampling_mqc)
         if (params.use_preqc){
@@ -94,7 +97,7 @@ workflow {
     }
     else {
         ch_after_preqc = ch_dwi_bvalbvec.dwi
-        bvs_after_preqc = ch_dwi_bvalbvec.bvs
+        bvs_after_preqc = ch_dwi_bvalbvec.bvs_files
     }
 
     if (params.run_denoising){
@@ -222,5 +225,5 @@ workflow {
         return tuple(meta, files)
     }
 
-    MULTIQC(ch_multiqc_files, [], ch_multiqc_config.toList(), [], channel.fromPath("${projectDir}/assets/logo_bg.png").toList(), [], [])
+    MULTIQC(ch_multiqc_files, [], ch_multiqc_config.toList(), [], channel.fromPath("${projectDir}/assets/nf-mouse-light-logo.png").toList(), [], [])
 }
