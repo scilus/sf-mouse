@@ -71,6 +71,10 @@ workflow {
     if ( params.use_fodf_for_tracking && ! params.run_tracking ) {
         error "The parameter use_fodf_for_tracking cannot be enabled if run_tracking is disabled."
     }
+    
+    if ( params.use_fodf_for_tracking && ! params.run_fodf) {
+        error "The parameter use_fodf_for_tracking cannot be enabled if run_fodf is disabled."
+    }
 
     ch_dwi_bvalbvec = data.dwi
         .multiMap { meta, dwi, bval, bvec ->
@@ -171,6 +175,7 @@ workflow {
     ch_multiqc_files = ch_multiqc_files.mix(RECONST_DTIMETRICS.out.mqc)
 
     /* FODF */ 
+    if ( params.run_fodf ) {
     RECONST_FRF(ch_for_reconst.map{ it + [[], [], []]})
     ch_for_reconst_fodf = ch_for_reconst
                             .join(RECONST_DTIMETRICS.out.fa)
@@ -178,7 +183,7 @@ workflow {
                             .join(RECONST_FRF.out.frf)
                             .map{ it + [[], []]}
     RECONST_FODF(ch_for_reconst_fodf)
-
+    }
     /* QBALL */
     RECONST_QBALL(ch_for_reconst)
 

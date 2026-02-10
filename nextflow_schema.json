@@ -90,6 +90,12 @@
                     "description": "Set it to false if you don't want to resample your data to the smallest current voxel dimension.",
                     "fa_icon": "fas fa-brain"
                 },
+                "run_fodf": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Set it to false if you don't want to run fODF",
+                    "fa_icon": "fas fa-brain"
+                },
                 "run_tracking": {
                     "type": "boolean",
                     "default": true,
