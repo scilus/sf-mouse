@@ -57,7 +57,7 @@ workflow get_data {
 
 workflow {
 
-    log.warn('During the first execution, nf-mouse may take some time to download the necessary modules.')
+    log.warn('During the first execution, sf-mouse may take some time to download the necessary modules.')
     log.info("Uses GPU: $params.use_gpu")
     // Define channel for multiqc files
     ch_multiqc_files = Channel.empty()
