@@ -18,6 +18,8 @@ include { MOUSE_EXTRACTMASKS } from './modules/local/mouse/extractmasks/main.nf'
 include { MOUSE_VOLUMEROISTATS } from './modules/local/mouse/volumeroistats/main.nf'
 include { STATS_METRICSINROI as STATS_AMBA } from './modules/nf-neuro/stats/metricsinroi/main'
 include { STATS_METRICSINROI as STATS_AMBA_LR } from './modules/nf-neuro/stats/metricsinroi/main'  
+include { MOUSE_CONVERTJSON as CONVERTJSON_AMBA } from './modules/local/mouse/convertjson/main.nf'
+include { MOUSE_CONVERTJSON as CONVERTJSON_AMBA_LR } from './modules/local/mouse/convertjson/main.nf'
 include { MOUSE_COMBINESTATS as COMBINESTATS_AMBA } from './modules/local/mouse/combinestats/main.nf'
 include { MOUSE_COMBINESTATS as COMBINESTATS_AMBA_LR } from './modules/local/mouse/combinestats/main.nf'
 include { MOUSE_COMBINESTATS as COMBINESTATS_MERGED} from './modules/local/mouse/combinestats/main.nf'
@@ -226,17 +228,20 @@ workflow {
     ch_for_stats = ch_metrics
                     .combine(MOUSE_EXTRACTMASKS.out.masks_dir, by: 0)
     MOUSE_VOLUMEROISTATS(ch_for_stats)
-
+    
     STATS_AMBA(ch_metrics.join(MOUSE_REGISTRATION.out.ANO.combine(ch_lut.map{ it.amba })))
     STATS_AMBA_LR(ch_metrics.join(MOUSE_REGISTRATION.out.ANO_LR.combine(ch_lut.map{ it.amba_lr })))
 
+    CONVERTJSON_AMBA(STATS_AMBA.out.stats_json)
+    CONVERTJSON_AMBA_LR(STATS_AMBA_LR.out.stats_json)
 
-    all_stats_amba = STATS_AMBA.out.stats_json
+    all_stats_amba = CONVERTJSON_AMBA.out.stats_reorganized
                 .map{ _meta, json -> json}
                 .collect()
-    all_stats_lr = STATS_AMBA_LR.out.stats_json
+    all_stats_lr = CONVERTJSON_AMBA_LR.out.stats_reorganized
                 .map{ _meta, json -> json}
                 .collect()
+    
     all_stats_merged = MOUSE_VOLUMEROISTATS.out.stats
                 .map{ _meta, json -> json}
                 .collect()

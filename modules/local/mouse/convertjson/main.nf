@@ -1,10 +1,10 @@
 process MOUSE_CONVERTJSON {
-    label 'process_high'
+    label 'process_low'
  
     container "scilus/nnunet_bet_mouse:dev"
 
     input:
-        tuple val(meta), path(stats), path(script_json)
+        tuple val(meta), path(stats)
     output:
         tuple val(meta), path("*__stats_reorganized.json")  , emit: stats_reorganized
         path "versions.yml"      , emit: versions
@@ -16,7 +16,7 @@ process MOUSE_CONVERTJSON {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
 
-    mouse_reorganize_json.py $script_json $stats ${prefix}__stats_reorganized.json
+    mouse_reorganize_json.py $stats ${prefix}__stats_reorganized.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
