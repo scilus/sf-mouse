@@ -7,7 +7,7 @@ process MOUSE_VOLUMEROISTATS {
     input:
         tuple val(meta), path(metrics_list), path(mask_directory)
     output:
-        tuple val(meta), path("*__stats.json")   , emit: stats
+        tuple val(meta), path("*_stats.json")   , emit: stats
         path "versions.yml"                          , emit: versions
 
     when:
@@ -38,7 +38,7 @@ process MOUSE_VOLUMEROISTATS {
         cp \$mask masks/\${bname}.nii.gz
     done
 
-    scil_volume_stats_in_ROI masks/*gz --metrics_dir metrics -f > ${prefix}__stats.json
+    scil_volume_stats_in_ROI masks/*gz --metrics_dir metrics -f > ${prefix}_stats.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

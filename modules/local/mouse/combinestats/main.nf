@@ -1,7 +1,7 @@
 process MOUSE_COMBINESTATS {
     label 'process_high'
 
-    container "scilus/scilpy:2.2.0_cpu"
+    container "scilus/scilpy:dev"
 
     input:
         path(stats_list)
@@ -14,21 +14,24 @@ process MOUSE_COMBINESTATS {
     task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ''
     def convert_to_xlsx = task.ext.convert_to_xlsx ?: false
+    
+    if ( task.ext.key ) args += " --extra_key nb-vx-seed"
     """
     shopt -s extglob
     mkdir stats
     
     for curr_stat in $stats_list;
     do
-        bname=\${curr_stat/__stats/}
+        bname=\${curr_stat/stats/}
         mv \$curr_stat stats/\${bname}
     done
 
     scil_json_merge_entries stats/*json all_stats.json --keep_separate
 
     if $convert_to_xlsx; then
-        scil_json_convert_entries_to_xlsx all_stats.json all_stats.xlsx
+        scil_json_convert_entries_to_xlsx all_stats.json all_stats.xlsx $args
     fi
 
     cat <<-END_VERSIONS > versions.yml

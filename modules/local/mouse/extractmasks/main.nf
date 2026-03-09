@@ -11,7 +11,6 @@ process MOUSE_EXTRACTMASKS {
         tuple val(meta), path("*masks")  , emit: masks_dir
         tuple val(meta), path("*__masks/*_MO_L.nii.gz"), path("*__masks/*_MO_R.nii.gz") , emit: masks_MO, optional: true
         tuple val(meta), path("*__masks/*_SS_L.nii.gz"), path("*__masks/*_SS_R.nii.gz") , emit: masks_SS, optional: true
-        path("*__masks/*.txt")
         path "versions.yml"                   , emit: versions
 
     when:
@@ -21,18 +20,17 @@ process MOUSE_EXTRACTMASKS {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def labels = task.ext.labels
     """
-    mouse_extract_masks.py $atlas $labels ${prefix}__masks -f
+    mouse_extract_masks.py $atlas $labels ${prefix}__masks --merge -f
 
     for curr_label in $labels; do
-        for side in L R; do
-            ids=\$(cat ${prefix}__masks/\${curr_label}_\$side.txt)
-            if [[ \$ids ]]; then
-                scil_labels_combine ${prefix}__masks/${prefix}__\${curr_label}_\$side.nii.gz \
-                    --volume_ids $atlas \${ids} \
-                    --merge_groups -f
-            fi
-        done
+        ids=\$(cat ${prefix}__masks/\${curr_label}.txt)
+        if [[ \$ids ]]; then
+            scil_labels_combine ${prefix}__masks/${prefix}__\${curr_label}.nii.gz \
+                --volume_ids $atlas \${ids} \
+                --merge_groups -f
+        fi
     done
+    rm -rf ${prefix}__masks/*.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

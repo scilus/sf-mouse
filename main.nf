@@ -16,9 +16,16 @@ include { TRACKING_MASK } from './modules/local/tracking/mask/main.nf'
 include { TRACKING_LOCALTRACKING } from './modules/nf-neuro/tracking/localtracking/main.nf'
 include { MOUSE_EXTRACTMASKS } from './modules/local/mouse/extractmasks/main.nf'
 include { MOUSE_VOLUMEROISTATS } from './modules/local/mouse/volumeroistats/main.nf'
-include { MOUSE_COMBINESTATS } from './modules/local/mouse/combinestats/main.nf'
+include { STATS_METRICSINROI as STATS_AMBA } from './modules/nf-neuro/stats/metricsinroi/main'
+include { STATS_METRICSINROI as STATS_AMBA_LR } from './modules/nf-neuro/stats/metricsinroi/main'  
+include { MOUSE_CONVERTJSON as CONVERTJSON_AMBA } from './modules/local/mouse/convertjson/main.nf'
+include { MOUSE_CONVERTJSON as CONVERTJSON_AMBA_LR } from './modules/local/mouse/convertjson/main.nf'
+include { MOUSE_COMBINESTATS as COMBINESTATS_AMBA } from './modules/local/mouse/combinestats/main.nf'
+include { MOUSE_COMBINESTATS as COMBINESTATS_AMBA_LR } from './modules/local/mouse/combinestats/main.nf'
+include { MOUSE_COMBINESTATS as COMBINESTATS_MERGED} from './modules/local/mouse/combinestats/main.nf'
 include { MULTIQC } from "./modules/nf-core/multiqc/main"
 include { PRE_QC } from './modules/local/mouse/preqc/main.nf'
+
 
 workflow get_data {
     main:
@@ -43,18 +50,26 @@ workflow get_data {
         input = file(params.input)
         // ** Loading all files. ** //
         dwi_channel = Channel.fromFilePairs("$input/**/*dwi.{nii.gz,bval,bvec}", size: 3, flat: true)
-            { it.parent.name }
-            .map{ sid, bvals, bvecs, dwi -> [ [id: sid], dwi, bvals, bvecs ] } // Reordering the inputs.
+                        { it.parent.name }
+                        .map{ sid, bvals, bvecs, dwi -> [ [id: sid], dwi, bvals, bvecs ] } // Reordering the inputs.
 
         mask_channel = Channel.fromPath("$input/**/*mask.nii.gz")
                         .map { mask_file -> def sid = mask_file.parent.name
                         [[id: sid], mask_file] }
+        
         template_channel = Channel.fromPath("$projectDir/assets/reference_rgb_mqc.png")
+        
+        lut_channel = Channel.of([
+            amba   : file("$projectDir/assets/LUT_AMBA.json"),
+            amba_lr: file("$projectDir/assets/LUT_AMBA-LR.json")
+        ])
+
 
     emit:
         dwi   = dwi_channel
         mask  = mask_channel
         template_rgb = template_channel
+        lut = lut_channel
 }
 
 workflow {
@@ -80,6 +95,7 @@ workflow {
             bvec:   [meta, bvec]
         }
     ch_ref_rgb = data.template_rgb
+    ch_lut = data.lut
 
     if ( params.run_preqc ) {
         PRE_QC(ch_dwi_bvalbvec.dwi.join(ch_dwi_bvalbvec.bvs_files).combine(ch_ref_rgb))
@@ -200,7 +216,7 @@ workflow {
         ch_multiqc_files = ch_multiqc_files.mix(TRACKING_LOCALTRACKING.out.mqc)
     }
 
-    MOUSE_EXTRACTMASKS(MOUSE_REGISTRATION.out.ANO_LR)
+    MOUSE_EXTRACTMASKS(MOUSE_REGISTRATION.out.ANO)
 
     ch_metrics = RECONST_DTIMETRICS.out.md
                     .join(RECONST_DTIMETRICS.out.fa)
@@ -212,11 +228,27 @@ workflow {
     ch_for_stats = ch_metrics
                     .combine(MOUSE_EXTRACTMASKS.out.masks_dir, by: 0)
     MOUSE_VOLUMEROISTATS(ch_for_stats)
+    
+    STATS_AMBA(ch_metrics.join(MOUSE_REGISTRATION.out.ANO.combine(ch_lut.map{ it.amba })))
+    STATS_AMBA_LR(ch_metrics.join(MOUSE_REGISTRATION.out.ANO_LR.combine(ch_lut.map{ it.amba_lr })))
 
-    all_stats = MOUSE_VOLUMEROISTATS.out.stats
+    CONVERTJSON_AMBA(STATS_AMBA.out.stats_json)
+    CONVERTJSON_AMBA_LR(STATS_AMBA_LR.out.stats_json)
+
+    all_stats_amba = CONVERTJSON_AMBA.out.stats_reorganized
                 .map{ _meta, json -> json}
                 .collect()
-    MOUSE_COMBINESTATS(all_stats)
+    all_stats_lr = CONVERTJSON_AMBA_LR.out.stats_reorganized
+                .map{ _meta, json -> json}
+                .collect()
+    
+    all_stats_merged = MOUSE_VOLUMEROISTATS.out.stats
+                .map{ _meta, json -> json}
+                .collect()
+                
+    COMBINESTATS_AMBA(all_stats_amba)
+    COMBINESTATS_AMBA_LR(all_stats_lr)
+    COMBINESTATS_MERGED(all_stats_merged)
 
     ch_multiqc_files = ch_multiqc_files
     .groupTuple()
