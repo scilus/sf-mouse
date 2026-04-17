@@ -28,6 +28,9 @@ RUN chmod 777 /ANO_taxonomy_EC_V4.csv
 COPY mouse_extract_masks.py /usr/local/bin/
 RUN chmod 777 /usr/local/bin/mouse_extract_masks.py
 
+COPY brain_extraction.py /usr/local/bin/
+RUN chmod 777 /usr/local/bin/brain_extraction.py
+
 WORKDIR /
 ADD atlas.tar.gz /
 

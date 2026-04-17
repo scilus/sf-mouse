@@ -3,6 +3,7 @@ include { DENOISING_MPPCA } from './modules/nf-neuro/denoising/mppca/main.nf'
 include { PREPROC_SINGLEEDDY } from './modules/local/preproc/singleeddy/main.nf'
 include { UTILS_EXTRACTB0 } from './modules/nf-neuro/utils/extractb0/main.nf'
 include { NNUNET } from './subworkflows/local/nnunet/'
+include { MOUSE_BET } from './modules/local/mouse/bet/main.nf'
 include { MOUSE_N4 } from './modules/local/mouse/n4/main.nf'
 include { IMAGE_RESAMPLE as RESAMPLE_DWI} from './modules/nf-neuro/image/resample/main.nf'
 include { IMAGE_RESAMPLE as RESAMPLE_MASK} from './modules/nf-neuro/image/resample/main.nf'
@@ -57,6 +58,10 @@ workflow get_data {
                         .map { mask_file -> def sid = mask_file.parent.name
                         [[id: sid], mask_file] }
         
+        anat_channel = Channel.fromPath("$input/**/*anat.nii.gz")
+                        .map { anat_file -> def sid = anat_file.parent.name
+                        [[id: sid], anat_file] }
+        
         template_channel = Channel.fromPath("$projectDir/assets/reference_rgb_mqc.png")
         
         lut_channel = Channel.of([
@@ -68,6 +73,7 @@ workflow get_data {
     emit:
         dwi   = dwi_channel
         mask  = mask_channel
+        anat = anat_channel
         template_rgb = template_channel
         lut = lut_channel
 }
@@ -105,6 +111,7 @@ workflow {
             log.warn('Using the output from the preqc module is highly experimental. Please be careful.')
             ch_after_preqc = PRE_QC.out.dwi
             bvs_after_preqc = PRE_QC.out.bvs
+            
         }
         else {
             ch_after_preqc = Channel.empty()
@@ -136,7 +143,16 @@ workflow {
     else {
         ch_after_eddy = ch_eddy
     }
-    
+
+    if (params.invivo){
+        MOUSE_BET(data.anat)
+        ch_after_eddy = ch_eddy.join(
+            MOUSE_BET.out.mask)
+    }
+    else {
+        ch_after_eddy = ch_eddy
+    }
+
     UTILS_EXTRACTB0(ch_after_eddy)
     ch_nnunet = ch_after_eddy.join(UTILS_EXTRACTB0.out.b0)
     .join(data.mask, by: 0, remainder: true)
