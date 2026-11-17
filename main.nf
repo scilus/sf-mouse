@@ -58,8 +58,7 @@ workflow get_data {
         }
         input = file(params.input)
         // ** Loading all files. ** //
-        dwi_channel = Channel.fromFilePairs("$input/**/*dwi.{nii.gz,bval,bvec}", size: 3, flat: true)
-                        { it.parent.name }
+        dwi_channel = Channel.fromFilePairs("$input/**/*dwi.{nii.gz,bval,bvec}", size: 3, flat: true) { it.parent.name }
                         .map{ sid, bvals, bvecs, dwi -> [ [id: sid], dwi, bvals, bvecs ] } // Reordering the inputs.
 
         mask_channel = Channel.fromPath("$input/**/*mask.nii.gz")
