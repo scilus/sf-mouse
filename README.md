@@ -8,10 +8,6 @@ Using on diffusion data sf-mouse is a nextflow pipeline based on [nf-neuro](http
 
 It incorporates essential steps: denoising, corrections of some artefacts, registration to a template (Allen Mouse Brain Atlas), the DTI and QBall reconstructions, extraction of some metrics, until constructing a whole brain tractogram of the mouse brain and extracting some bundles. It is capable of adapting the resolution of the atlas according to the native data, for better anatomical alignment.
 
-Configuration and input-discovery regression tests can be run with
-`python -m unittest discover -s test -v`. The resource tests exercise local
-execution and simulate SLURM submission; they do not require a SLURM cluster.
-
 
 ### Documentation:
 --------------
