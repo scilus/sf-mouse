@@ -30,14 +30,15 @@ process MOUSE_REGISTRATION {
     def atlas_50_resolution = task.ext.atlas_50_resolution
     def atlas_100_resolution = task.ext.atlas_100_resolution
     def run_qc = task.ext.run_qc ?: false
+    def b0_threshold = task.ext.b0_threshold ? "--b0_threshold ${task.ext.b0_threshold}" : ""
 
     """
     export OMP_NUM_THREADS=$task.cpus
     export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
     export OPENBLAS_NUM_THREADS=1
 
-	scil_dti_metrics $dwi $bval $bvec --mask $mask --not_all --fa ${prefix}__fa.nii.gz -f
-	scil_dwi_extract_b0 $dwi $bval $bvec ${prefix}__b0.nii.gz -f
+	scil_dti_metrics $dwi $bval $bvec --mask $mask --not_all --fa ${prefix}__fa.nii.gz $b0_threshold -f
+	scil_dwi_extract_b0 $dwi $bval $bvec ${prefix}__b0.nii.gz $b0_threshold -f
 
     # Apply mask to b0
     fslmaths ${prefix}__b0.nii.gz -mul $mask ${prefix}__b0_masked.nii.gz
