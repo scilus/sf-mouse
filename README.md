@@ -8,11 +8,6 @@ Using on diffusion data sf-mouse is a nextflow pipeline based on [nf-neuro](http
 
 It incorporates essential steps: denoising, corrections of some artefacts, registration to a template (Allen Mouse Brain Atlas), the DTI and QBall reconstructions, extraction of some metrics, until constructing a whole brain tractogram of the mouse brain and extracting some bundles. It is capable of adapting the resolution of the atlas according to the native data, for better anatomical alignment.
 
-The `--b0_threshold` parameter controls b0 selection in nnUNet powder
-averaging, atlas registration, and diffusion reconstruction. Its default is
-100; choose a value suitable for the acquisition. This replaces the lower
-Scilpy defaults previously used by these steps.
-
 
 ### Documentation:
 --------------
