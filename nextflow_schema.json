@@ -40,6 +40,11 @@
             "fa_icon": "fas fa-cogs",
             "description": "Major options.",
             "properties": {
+                "invivo_register_anat": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Rigidly register the anatomical image to the DWI b=0 before transforming the invivo brain mask. If false, regrid the mask without registration when needed; anatomical alignment must already be correct."
+                },
                 "use_preqc": {
                     "type": "boolean",
                     "default": false, 

@@ -1,0 +1,8 @@
+name: mouse_alignanatmask
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - ants
+  - nibabel
+  - numpy

@@ -4,6 +4,7 @@ include { PREPROC_SINGLEEDDY } from './modules/local/preproc/singleeddy/main.nf'
 include { UTILS_EXTRACTB0 } from './modules/nf-neuro/utils/extractb0/main.nf'
 include { NNUNET } from './subworkflows/local/nnunet/'
 include { BET } from './subworkflows/local/bet/main.nf'
+include { MOUSE_ALIGNANATMASK; parse_invivo_register_anat } from './modules/local/mouse/alignanatmask/main.nf'
 include { MOUSE_N4 } from './modules/local/mouse/n4/main.nf'
 include { IMAGE_RESAMPLE as RESAMPLE_DWI} from './modules/nf-neuro/image/resample/main.nf'
 include { IMAGE_RESAMPLE as RESAMPLE_MASK} from './modules/nf-neuro/image/resample/main.nf'
@@ -157,8 +158,14 @@ workflow {
     UTILS_EXTRACTB0(ch_after_eddy)
 
     if (params.invivo) {
+        def register_anat = parse_invivo_register_anat(params.invivo_register_anat)
         BET(ch_bet)
-        ch_mask = BET.out.mask
+        ch_anat_mask = UTILS_EXTRACTB0.out.b0
+            .join(ch_bet, failOnMismatch: true, failOnDuplicate: true)
+            .join(BET.out.mask, failOnMismatch: true, failOnDuplicate: true)
+        MOUSE_ALIGNANATMASK(ch_anat_mask, register_anat,
+            file("${projectDir}/modules/local/mouse/alignanatmask/validate_grids.py", checkIfExists: true))
+        ch_mask = MOUSE_ALIGNANATMASK.out.mask
     }
     else if ( params.data_masked ) {
         ch_mask = data.mask

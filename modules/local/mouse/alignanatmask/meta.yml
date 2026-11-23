@@ -1,0 +1,41 @@
+name: mouse_alignanatmask
+description: Align an anatomical brain mask to the DWI b0 grid.
+keywords:
+  - brain mask
+  - registration
+  - resampling
+tools:
+  - ants:
+      description: Advanced Normalization Tools
+      homepage: https://github.com/ANTsX/ANTs
+input:
+  - meta:
+      type: map
+      description: Subject metadata.
+  - b0:
+      type: file
+      description: Reference b0 image.
+      pattern: "*.nii.gz"
+  - anat:
+      type: file
+      description: Anatomical image on the mask grid.
+      pattern: "*.nii.gz"
+  - mask:
+      type: file
+      description: Anatomical brain mask.
+      pattern: "*.nii.gz"
+  - register_anat:
+      type: boolean
+      description: Rigidly register anatomy to b0 before transforming the mask.
+  - validator:
+      type: file
+      description: Grid and mask validation script.
+output:
+  - mask:
+      type: file
+      description: Anatomical mask on the b0 grid.
+      pattern: "*__anat_dwi_mask.nii.gz"
+  - versions:
+      type: file
+      description: Software versions.
+      pattern: "versions.yml"
