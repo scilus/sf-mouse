@@ -40,10 +40,15 @@
             "fa_icon": "fas fa-cogs",
             "description": "Major options.",
             "properties": {
+                "invivo": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use the in-vivo brain-mask workflow. An optional anatomical image is used when present; otherwise the DWI b=0 is used."
+                },
                 "invivo_register_anat": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Rigidly register the anatomical image to the DWI b=0 before transforming the invivo brain mask. If false, regrid the mask without registration when needed; anatomical alignment must already be correct."
+                    "description": "When an anatomical image is available, rigidly register it to the DWI b=0 before transforming the in-vivo brain mask. If false, regrid the mask without registration when needed; anatomical alignment must already be correct. Has no effect without anatomy."
                 },
                 "use_preqc": {
                     "type": "boolean",
