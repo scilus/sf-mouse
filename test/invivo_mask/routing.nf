@@ -8,15 +8,24 @@ workflow {
         [[id: 'fallback'], input.resolve('b0_fallback.nii.gz')]
     ]
     def anatomies = [[[id: 'anatomy'], input.resolve('anat.nii.gz')]]
+    def masks = []
     if (params.scenario == 'duplicate-anatomy') {
         anatomies << [[id: 'anatomy'], input.resolve('duplicate.nii.gz')]
     } else if (params.scenario == 'duplicate-b0') {
         b0s << [[id: 'fallback'], input.resolve('duplicate.nii.gz')]
     } else if (params.scenario == 'orphan-anatomy') {
         anatomies << [[id: 'orphan'], input.resolve('duplicate.nii.gz')]
+    } else if (params.scenario == 'orphan-mask') {
+        masks << [[id: 'orphan'], input.resolve('provided_mask.nii.gz')]
+    } else if (params.scenario == 'mixed') {
+        masks << [[id: 'anatomy'], input.resolve('provided_mask.nii.gz')]
+    } else if (params.scenario == 'provided-no-anatomy') {
+        anatomies = []
+        masks << [[id: 'fallback'], input.resolve('provided_mask.nii.gz')]
     } else if (params.scenario == 'no-anatomy') {
         anatomies = []
     }
-    INVIVO_MASK(Channel.fromList(b0s), Channel.fromList(anatomies), true, validator)
+    INVIVO_MASK(Channel.fromList(b0s), Channel.fromList(anatomies),
+        Channel.fromList(masks), true, validator)
     INVIVO_MASK.out.mask.view { meta, mask -> "RESULT ${meta.id} ${mask}" }
 }

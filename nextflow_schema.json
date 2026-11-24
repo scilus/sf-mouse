@@ -43,12 +43,12 @@
                 "invivo": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Use the in-vivo brain-mask workflow. An optional anatomical image is used when present; otherwise the DWI b=0 is used."
+                    "description": "Use the in-vivo brain-mask workflow. A provided mask is used when present; otherwise a mask is generated from the optional anatomical image or, if absent, the DWI b=0."
                 },
                 "invivo_register_anat": {
                     "type": "boolean",
                     "default": true,
-                    "description": "When an anatomical image is available, rigidly register it to the DWI b=0 before transforming the in-vivo brain mask. If false, regrid the mask without registration when needed; anatomical alignment must already be correct. Has no effect without anatomy."
+                    "description": "When an anatomical image is available, rigidly register it to the DWI b=0 before transforming the brain mask, including a provided mask. If false, regrid the mask without registration when needed; anatomical alignment must already be correct. Has no effect without anatomy."
                 },
                 "use_preqc": {
                     "type": "boolean",

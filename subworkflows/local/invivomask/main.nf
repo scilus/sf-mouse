@@ -6,6 +6,7 @@ workflow INVIVO_MASK {
     take:
         b0
         anatomy
+        provided_mask
         register_anat
         validator
 
@@ -15,9 +16,23 @@ workflow INVIVO_MASK {
                 if (!reference) error "${meta.id}: anatomical input has no matching DWI b0"
                 [meta, reference, anat ?: []]
             }
+            .join(provided_mask, remainder: true, failOnDuplicate: true)
+            .map { row ->
+                if (row.size() == 3 && !row[1]) {
+                    error "${row[0].id}: provided mask has no matching DWI b0"
+                }
+                [row[0], row[1], row[2], row[3] ?: []]
+            }
+            .branch { meta, reference, anat, mask ->
+                provided: mask
+                generate: true
+            }
 
-        BET(subjects.map { meta, reference, anat -> [meta, anat ?: reference] })
-        masks = subjects.join(BET.out.mask, failOnMismatch: true, failOnDuplicate: true)
+        BET(subjects.generate.map { meta, reference, anat, _mask -> [meta, anat ?: reference] })
+        generated_masks = subjects.generate.join(BET.out.mask, failOnMismatch: true, failOnDuplicate: true)
+            .map { meta, reference, anat, _provided_mask, mask -> [meta, reference, anat, mask] }
+        provided_masks = subjects.provided.map { meta, reference, anat, mask -> [meta, reference, anat, mask] }
+        masks = generated_masks.mix(provided_masks)
             .branch { meta, reference, anat, mask ->
                 anatomical: anat
                 dwi: true

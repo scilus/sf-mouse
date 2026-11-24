@@ -159,7 +159,7 @@ workflow {
 
     if (params.invivo) {
         def register_anat = parse_invivo_register_anat(params.invivo_register_anat)
-        INVIVO_MASK(UTILS_EXTRACTB0.out.b0, ch_bet, register_anat,
+        INVIVO_MASK(UTILS_EXTRACTB0.out.b0, ch_bet, data.mask, register_anat,
             file("${projectDir}/modules/local/mouse/alignanatmask/validate_grids.py", checkIfExists: true))
         ch_mask = INVIVO_MASK.out.mask
     }

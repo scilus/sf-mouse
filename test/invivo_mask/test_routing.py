@@ -12,15 +12,16 @@ class RoutingTests(unittest.TestCase):
     def test_subject_routing(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for name in ("b0_anatomy", "b0_fallback", "anat", "duplicate"):
+            for name in ("b0_anatomy", "b0_fallback", "anat", "duplicate", "provided_mask"):
                 (root / f"{name}.nii.gz").touch()
             config = root / "nextflow.config"
             config.write_text(
                 f"process.cpus = 2\ndocker.enabled = true\n"
                 f"docker.runOptions = '-u {os.getuid()}:{os.getgid()}'\n"
             )
-            for scenario in ("mixed", "no-anatomy", "duplicate-anatomy",
-                             "duplicate-b0", "orphan-anatomy"):
+            for scenario in ("mixed", "no-anatomy", "provided-no-anatomy",
+                             "duplicate-anatomy", "duplicate-b0",
+                             "orphan-anatomy", "orphan-mask"):
                 with self.subTest(scenario=scenario):
                     work = root / scenario
                     result = subprocess.run(
@@ -35,21 +36,41 @@ class RoutingTests(unittest.TestCase):
                     if scenario.startswith("duplicate"):
                         self.assertNotEqual(result.returncode, 0, output)
                         self.assertIn("duplicate", output.lower())
-                    elif scenario == "orphan-anatomy":
+                    elif scenario in ("orphan-anatomy", "orphan-mask"):
                         self.assertNotEqual(result.returncode, 0, output)
-                        self.assertIn("orphan: anatomical input has no matching DWI b0", output)
+                        message = ("anatomical input" if scenario == "orphan-anatomy"
+                                   else "provided mask")
+                        self.assertIn(f"orphan: {message} has no matching DWI b0", output)
                     else:
                         self.assertEqual(result.returncode, 0, output)
                         self.assertIn("RESULT anatomy ", output)
                         self.assertIn("RESULT fallback ", output)
                         prep = [p.parent for p in work.glob("*/*/.command.sh")
                                 if "N4BiasFieldCorrection -h" in p.read_text()]
-                        self.assertEqual(len(prep), 2)
+                        expected_prep_count = {
+                            "mixed": 1,
+                            "no-anatomy": 2,
+                            "provided-no-anatomy": 1,
+                        }[scenario]
+                        self.assertEqual(len(prep), expected_prep_count)
                         inputs = {path.name for task in prep for path in task.iterdir()
                                   if path.is_symlink()}
-                        self.assertIn("b0_fallback.nii.gz", inputs)
-                        self.assertIn("anat.nii.gz" if scenario == "mixed"
-                                      else "b0_anatomy.nii.gz", inputs)
+                        if scenario in ("mixed", "no-anatomy"):
+                            self.assertIn("b0_fallback.nii.gz", inputs)
+                        if scenario == "no-anatomy":
+                            self.assertIn("b0_anatomy.nii.gz", inputs)
+                        elif scenario == "mixed":
+                            self.assertNotIn("anat.nii.gz", inputs)
+                        else:
+                            self.assertIn("b0_anatomy.nii.gz", inputs)
+                        staged_inputs = {
+                            path.name for task in work.glob("*/*")
+                            for path in task.iterdir() if path.is_symlink()
+                        }
+                        if scenario == "mixed":
+                            self.assertIn("anat_mask.nii.gz", staged_inputs)
+                        elif scenario == "provided-no-anatomy":
+                            self.assertIn("provided_mask.nii.gz", staged_inputs)
                         self.assertEqual(output.count("Submitted process > INVIVO_MASK:MOUSE_ALIGNANATMASK"),
                                          1 if scenario == "mixed" else 0)
                         self.assertEqual(output.count("Submitted process > INVIVO_MASK:MOUSE_VALIDATEINVIVOMASK"),
