@@ -26,8 +26,11 @@ process MOUSE_BRAINEXTRACTION {
     """
 
     stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     antsMouseBrainExtraction -h
+
+    touch ${prefix}__mask.nii.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

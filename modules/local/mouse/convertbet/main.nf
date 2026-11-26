@@ -35,10 +35,6 @@ process MOUSE_CONVERTBET {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    fslmaths
-    scil_volume_math -h
-    ImageMath
-
     touch ${prefix}_mask.nii.gz 
 
     cat <<-END_VERSIONS > versions.yml
