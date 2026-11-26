@@ -11,6 +11,43 @@ IMAGE = "scilus/scilus:2.2.2"
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_convertbet_erosion_radius_is_configured(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workflow = root / "workflow.nf"
+            workflow.write_text(
+                """
+process MOUSE_CONVERTBET {
+    output:
+        stdout
+    script:
+    \"\"\"
+    echo NB_VOX=${task.ext.nb_vox ?: 'missing'}
+    \"\"\"
+}
+
+workflow {
+    MOUSE_CONVERTBET()
+    MOUSE_CONVERTBET.out.view { it }
+}
+"""
+            )
+            config = root / "nextflow.config"
+            shutil.copytree(ROOT / "conf", root / "conf")
+            config.write_text(
+                (ROOT / "nextflow.config").read_text().replace(
+                    "includeConfig 'conf/base.config'\n", "", 1
+                )
+            )
+            result = subprocess.run(
+                ["nextflow", "-log", str(root / "nextflow.log"), "run", str(workflow),
+                 "-c", str(config), "-work-dir", str(root / "work")],
+                cwd=root, env={**os.environ, "NXF_ANSI_LOG": "false"},
+                capture_output=True, text=True, timeout=120,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("NB_VOX=3", result.stdout + result.stderr)
+
     def test_alignment_and_identity_resampling(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
