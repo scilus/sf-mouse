@@ -19,16 +19,30 @@ class AlignmentTests(unittest.TestCase):
                 """
 process MOUSE_CONVERTBET {
     output:
-        stdout
+        stdout emit: result
     script:
     \"\"\"
     echo NB_VOX=${task.ext.nb_vox ?: 'missing'}
     \"\"\"
 }
 
+workflow BET {
+    main:
+        MOUSE_CONVERTBET()
+    emit:
+        result = MOUSE_CONVERTBET.out.result
+}
+
+workflow INVIVO_MASK {
+    main:
+        BET()
+    emit:
+        result = BET.out.result
+}
+
 workflow {
-    MOUSE_CONVERTBET()
-    MOUSE_CONVERTBET.out.view { it }
+    INVIVO_MASK()
+    INVIVO_MASK.out.result.view { it }
 }
 """
             )
@@ -46,6 +60,7 @@ workflow {
                 capture_output=True, text=True, timeout=120,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("INVIVO_MASK:BET:MOUSE_CONVERTBET", result.stdout)
             self.assertIn("NB_VOX=3", result.stdout + result.stderr)
 
     def test_alignment_and_identity_resampling(self):
